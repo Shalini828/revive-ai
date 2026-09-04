@@ -1,11 +1,14 @@
 import express from "express";
+
 import { db } from "../prisma/db.ts";
+
+import { requireAuth } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 // POST /api/users
 // Create a new user
-router.post("/", async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   try {
     const { email, name } = req.body;
 
@@ -17,8 +20,8 @@ router.post("/", async (req, res) => {
     }
 
     const user = await db.orm.public.User.create({
-      email,
-      name,
+      email: email.trim().toLowerCase(),
+      name: name?.trim() || null,
     });
 
     res.status(201).json({
@@ -36,37 +39,68 @@ router.post("/", async (req, res) => {
 });
 
 // GET /api/users
-// Get all users
-router.get("/", async (req, res) => {
+// Get users
+router.get("/", requireAuth, async (req, res) => {
   try {
-    const users = await db.orm.public.User.all();
+    const user = await db.orm.public.User.where({ id: req.user.id }).first();
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
 
     res.json({
       success: true,
-      users,
+      user,
     });
   } catch (error) {
-    console.error("Fetch users error:", error);
+    console.error("Fetch user error:", error);
 
     res.status(500).json({
       success: false,
-      message: "Failed to fetch users",
+      message: "Failed to fetch user",
     });
   }
 });
 
 // UPDATE a user
-router.put("/:id", async (req, res) => {
+router.put("/:id", requireAuth, async (req, res) => {
   try {
     const id = Number(req.params.id);
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid userId is required",
+      });
+    }
+
+    // User can only update their own profile
+    if (req.user.id !== id) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to update this user",
+      });
+    }
+
     const { email, name } = req.body;
 
-    const user = await db.orm.public.User
-      .where({ id })
-      .update({
-        email,
-        name,
+    const existingUser = await db.orm.public.User.where({ id }).first();
+
+    if (!existingUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
       });
+    }
+
+    const user = await db.orm.public.User.where({ id }).update({
+      email:
+        email !== undefined ? email.trim().toLowerCase() : existingUser.email,
+      name: name !== undefined ? name.trim() : existingUser.name,
+    });
 
     res.json({
       success: true,
@@ -83,8 +117,8 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-/// DELETE /api/users/:id
-router.delete("/:id", async (req, res) => {
+// DELETE /api/users/:id
+router.delete("/:id", requireAuth, async (req, res) => {
   try {
     const id = Number(req.params.id);
 
@@ -95,20 +129,31 @@ router.delete("/:id", async (req, res) => {
       });
     }
 
-    // Delete user's alerts first
-    await db.orm.public.RevenueAlert
-      .where({ userId: id })
-      .delete();
+    // User can only delete their own account
+    if (req.user.id !== id) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to delete this user",
+      });
+    }
+
+    // Delete user's recovery actions
+    await db.orm.public.RecoveryAction.where({ userId: id }).delete();
+
+    // Delete user's AI recommendations
+    await db.orm.public.AIRecommendation.where({ userId: id }).delete();
+
+    // Delete user's payments
+    await db.orm.public.Payment.where({ userId: id }).delete();
+
+    // Delete user's alerts
+    await db.orm.public.RevenueAlert.where({ userId: id }).delete();
 
     // Delete user's transactions
-    await db.orm.public.Transaction
-      .where({ userId: id })
-      .delete();
+    await db.orm.public.Transaction.where({ userId: id }).delete();
 
     // Finally delete the user
-    const user = await db.orm.public.User
-      .where({ id })
-      .delete();
+    const user = await db.orm.public.User.where({ id }).delete();
 
     res.json({
       success: true,
@@ -124,4 +169,5 @@ router.delete("/:id", async (req, res) => {
     });
   }
 });
+
 export default router;

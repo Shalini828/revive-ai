@@ -1,12 +1,29 @@
 import express from "express";
+
 import { db } from "../prisma/db.ts";
+import { generateRevenueAlert } from "../services/revenueAnalysisService.js";
+import { requireAuth } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// GET all transactions
-router.get("/", async (req, res) => {
+
+// GET /api/transactions
+// Get transactions for the authenticated user
+router.get("/", requireAuth, async (req, res) => {
   try {
-    const transactions = await db.orm.public.Transaction.all();
+    const allTransactions =
+      await db.orm.public.Transaction.all();
+
+    const transactions = allTransactions
+      .filter(
+        (transaction) =>
+          Number(transaction.userId) === req.user.id
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() -
+          new Date(a.createdAt).getTime()
+      );
 
     res.json({
       success: true,
@@ -22,15 +39,38 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET transactions for a specific user
-router.get("/user/:userId", async (req, res) => {
+
+// GET /api/transactions/user/:userId
+// Get transactions for a specific user
+router.get("/user/:userId", requireAuth, async (req, res) => {
   try {
     const userId = Number(req.params.userId);
+
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid userId is required",
+      });
+    }
+
+    // User can only access their own transactions
+    if (req.user.id !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to access these transactions",
+      });
+    }
 
     const transactions =
       await db.orm.public.Transaction.where({
         userId,
       }).all();
+
+    transactions.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime()
+    );
 
     res.json({
       success: true,
@@ -46,11 +86,12 @@ router.get("/user/:userId", async (req, res) => {
   }
 });
 
-// CREATE a transaction
-router.post("/", async (req, res) => {
+
+// POST /api/transactions
+// Create a transaction for the authenticated user
+router.post("/", requireAuth, async (req, res) => {
   try {
     const {
-      userId,
       amount,
       currency,
       category,
@@ -58,22 +99,48 @@ router.post("/", async (req, res) => {
       status,
     } = req.body;
 
-    if (!userId || amount === undefined) {
+    const numericAmount = Number(amount);
+
+    if (
+      amount === undefined ||
+      amount === null ||
+      amount === "" ||
+      !Number.isFinite(numericAmount) ||
+      numericAmount <= 0
+    ) {
       return res.status(400).json({
         success: false,
-        message: "userId and amount are required",
+        message: "amount must be a valid positive number",
       });
     }
 
     const transaction =
       await db.orm.public.Transaction.create({
-        userId: Number(userId),
-        amount: Number(amount),
+        // IMPORTANT:
+        // userId comes from JWT, not request body
+        userId: req.user.id,
+
+        amount: numericAmount,
+
         currency: currency || "INR",
+
         category: category || null,
+
         description: description || null,
+
         status: status || "completed",
       });
+
+    // Alert generation should not make
+    // a successful transaction look like a failure.
+    try {
+      await generateRevenueAlert(req.user.id);
+    } catch (alertError) {
+      console.error(
+        "Revenue alert generation failed:",
+        alertError
+      );
+    }
 
     res.status(201).json({
       success: true,
@@ -89,19 +156,47 @@ router.post("/", async (req, res) => {
   }
 });
 
-// DELETE a transaction
-router.delete("/:id", async (req, res) => {
+
+// DELETE /api/transactions/:id
+// Delete only the authenticated user's transaction
+router.delete("/:id", requireAuth, async (req, res) => {
   try {
     const id = Number(req.params.id);
 
-    const transaction = await db.orm.public.Transaction
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid transaction id is required",
+      });
+    }
+
+    const transaction =
+      await db.orm.public.Transaction
+        .where({ id })
+        .first();
+
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: "Transaction not found",
+      });
+    }
+
+    // Ownership check
+    if (Number(transaction.userId) !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to delete this transaction",
+      });
+    }
+
+    await db.orm.public.Transaction
       .where({ id })
       .delete();
 
     res.json({
       success: true,
       message: "Transaction deleted successfully",
-      transaction,
     });
   } catch (error) {
     console.error("Transaction deletion error:", error);
@@ -113,10 +208,19 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// UPDATE a transaction
-router.put("/:id", async (req, res) => {
+
+// PUT /api/transactions/:id
+// Update only the authenticated user's transaction
+router.put("/:id", requireAuth, async (req, res) => {
   try {
     const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid transaction id is required",
+      });
+    }
 
     const {
       amount,
@@ -126,15 +230,73 @@ router.put("/:id", async (req, res) => {
       status,
     } = req.body;
 
-    const transaction = await db.orm.public.Transaction
-      .where({ id })
-      .update({
-        amount,
-        currency,
-        category,
-        description,
-        status,
+    const existingTransaction =
+      await db.orm.public.Transaction
+        .where({ id })
+        .first();
+
+    if (!existingTransaction) {
+      return res.status(404).json({
+        success: false,
+        message: "Transaction not found",
       });
+    }
+
+    // Ownership check
+    if (
+      Number(existingTransaction.userId) !==
+      req.user.id
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to update this transaction",
+      });
+    }
+
+    let updatedAmount = existingTransaction.amount;
+
+    if (amount !== undefined) {
+      const numericAmount = Number(amount);
+
+      if (
+        !Number.isFinite(numericAmount) ||
+        numericAmount <= 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "amount must be a valid positive number",
+        });
+      }
+
+      updatedAmount = numericAmount;
+    }
+
+    const transaction =
+      await db.orm.public.Transaction
+        .where({ id })
+        .update({
+          amount: updatedAmount,
+
+          currency:
+            currency !== undefined
+              ? currency
+              : existingTransaction.currency,
+
+          category:
+            category !== undefined
+              ? category
+              : existingTransaction.category,
+
+          description:
+            description !== undefined
+              ? description
+              : existingTransaction.description,
+
+          status:
+            status !== undefined
+              ? status
+              : existingTransaction.status,
+        });
 
     res.json({
       success: true,
@@ -151,19 +313,37 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// GET a single transaction
-router.get("/:id", async (req, res) => {
+
+// GET /api/transactions/:id
+// Get a single transaction owned by the authenticated user
+router.get("/:id", requireAuth, async (req, res) => {
   try {
     const id = Number(req.params.id);
 
-    const transaction = await db.orm.public.Transaction
-      .where({ id })
-      .first();
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid transaction id is required",
+      });
+    }
+
+    const transaction =
+      await db.orm.public.Transaction
+        .where({ id })
+        .first();
 
     if (!transaction) {
       return res.status(404).json({
         success: false,
         message: "Transaction not found",
+      });
+    }
+
+    // Ownership check
+    if (Number(transaction.userId) !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to access this transaction",
       });
     }
 
@@ -180,5 +360,6 @@ router.get("/:id", async (req, res) => {
     });
   }
 });
+
 
 export default router;

@@ -1,0 +1,177 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * REVIVE AI design system — premium fintech operations console.
+ * Neutral slate canvas, deep ink primary, restrained emerald/amber/rose accents.
+ * All colors are oklch semantic tokens. Never hardcode colors in components.
+ */
+
+@theme inline {
+  --font-sans: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+
+  --shadow-card: 0 1px 2px oklch(0.2 0.03 255 / 0.05), 0 1px 3px oklch(0.2 0.03 255 / 0.04);
+  --shadow-raised: 0 4px 16px oklch(0.2 0.03 255 / 0.08), 0 1px 2px oklch(0.2 0.03 255 / 0.04);
+  --shadow-overlay: 0 24px 48px oklch(0.2 0.03 255 / 0.18);
+}
+
+:root {
+  --radius: 0.75rem;
+
+  --background: oklch(0.982 0.003 250);
+  --foreground: oklch(0.21 0.024 258);
+  --surface: oklch(1 0 0);
+  --surface-muted: oklch(0.968 0.005 250);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.024 258);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.024 258);
+
+  --primary: oklch(0.32 0.049 259);
+  --primary-foreground: oklch(0.985 0.002 250);
+  --secondary: oklch(0.962 0.006 250);
+  --secondary-foreground: oklch(0.31 0.03 258);
+
+  --muted: oklch(0.965 0.005 250);
+  --muted-foreground: oklch(0.53 0.021 257);
+  --accent: oklch(0.95 0.012 250);
+  --accent-foreground: oklch(0.28 0.035 258);
+
+  --destructive: oklch(0.556 0.196 25.5);
+  --destructive-foreground: oklch(0.99 0.002 250);
+
+  --success: oklch(0.55 0.116 163);
+  --success-foreground: oklch(0.99 0.002 250);
+  --success-soft: oklch(0.955 0.033 165);
+
+  --warning: oklch(0.63 0.135 68);
+  --warning-foreground: oklch(0.99 0.002 250);
+  --warning-soft: oklch(0.96 0.043 82);
+
+  --danger: oklch(0.556 0.196 25.5);
+  --danger-foreground: oklch(0.99 0.002 250);
+  --danger-soft: oklch(0.958 0.026 20);
+
+  --info: oklch(0.53 0.132 255);
+  --info-soft: oklch(0.955 0.026 255);
+
+  --border: oklch(0.917 0.008 252);
+  --border-strong: oklch(0.86 0.011 252);
+  --input: oklch(0.917 0.008 252);
+  --ring: oklch(0.53 0.132 255);
+
+  --chart-1: oklch(0.556 0.196 25.5);
+  --chart-2: oklch(0.63 0.135 68);
+  --chart-3: oklch(0.55 0.116 163);
+  --chart-4: oklch(0.53 0.132 255);
+  --chart-5: oklch(0.46 0.09 285);
+
+  --sidebar: oklch(0.215 0.026 259);
+  --sidebar-foreground: oklch(0.93 0.008 250);
+  --sidebar-muted: oklch(0.66 0.017 255);
+  --sidebar-accent: oklch(0.28 0.032 259);
+  --sidebar-accent-foreground: oklch(0.98 0.003 250);
+  --sidebar-border: oklch(0.3 0.028 259);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: -0.018em;
+  }
+}
+
+@utility num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+@utility panel {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+}
+
+@utility section-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}

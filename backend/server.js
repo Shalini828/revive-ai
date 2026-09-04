@@ -1,12 +1,22 @@
+import "dotenv/config";
+
 import express from "express";
 import cors from "cors";
 import { db } from "./src/prisma/db.ts";
+
 import transactionRoutes from "./src/routes/transactionRoutes.js";
 import userRoutes from "./src/routes/userRoutes.js";
 import alertRoutes from "./src/routes/alertRoutes.js";
 import analysisRoutes from "./src/routes/analysisRoutes.js";
 import aiRoutes from "./src/routes/aiRoutes.js";
 import dashboardRoutes from "./src/routes/dashboardRoutes.js";
+import recoveryRoutes from "./src/routes/recoveryRoutes.js";
+import authRoutes from "./src/routes/authRoutes.js";
+import paymentRoutes from "./src/routes/paymentRoutes.js";
+import recommendationRoutes from "./src/routes/recommendationRoutes.js";
+import recoveryActionRoutes from "./src/routes/recoveryActionRoutes.js";
+import revenueLeakRoutes from "./src/routes/revenueLeakRoutes.js";
+import razorpayWebhookRoutes from "./src/routes/razorpayWebhookRoutes.js";
 
 const app = express();
 
@@ -14,14 +24,21 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/users", userRoutes);
 app.use("/api/transactions", transactionRoutes);
+app.use("/api/revenue-leak", revenueLeakRoutes);
+app.use("/api/razorpay/webhook", razorpayWebhookRoutes);
 app.use("/api/alerts", alertRoutes);
 app.use("/api/analysis", analysisRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/recovery", recoveryRoutes);
+app.use("/api/recovery-actions", recoveryActionRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/recommendations", recommendationRoutes);
 
 app.get("/", (req, res) => {
   res.json({
-    message: "REVIVE AI backend is running 🚀",
+    message: "REVIVE AI backend is running",
   });
 });
 
