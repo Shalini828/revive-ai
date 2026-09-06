@@ -15,9 +15,12 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AuditLogsRouteImport } from './routes/audit-logs'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MerchantSettingsRouteImport } from './routes/merchant-settings'
 import { Route as OpportunitiesRouteImport } from './routes/opportunities'
 import { Route as RecoveryLabRouteImport } from './routes/recovery-lab'
+import { Route as RecoveryPoliciesRouteImport } from './routes/recovery-policies'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as TeamApprovalsRouteImport } from './routes/team-approvals'
 import { Route as TransactionsRouteImport } from './routes/transactions'
 
 const IndexRoute = IndexRouteImport.update({
@@ -50,6 +53,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MerchantSettingsRoute = MerchantSettingsRouteImport.update({
+  id: '/merchant-settings',
+  path: '/merchant-settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OpportunitiesRoute = OpportunitiesRouteImport.update({
   id: '/opportunities',
   path: '/opportunities',
@@ -60,9 +68,19 @@ const RecoveryLabRoute = RecoveryLabRouteImport.update({
   path: '/recovery-lab',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RecoveryPoliciesRoute = RecoveryPoliciesRouteImport.update({
+  id: '/recovery-policies',
+  path: '/recovery-policies',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamApprovalsRoute = TeamApprovalsRouteImport.update({
+  id: '/team-approvals',
+  path: '/team-approvals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TransactionsRoute = TransactionsRouteImport.update({
@@ -78,9 +96,12 @@ export interface FileRoutesByFullPath {
   '/audit-logs': typeof AuditLogsRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/merchant-settings': typeof MerchantSettingsRoute
   '/opportunities': typeof OpportunitiesRoute
   '/recovery-lab': typeof RecoveryLabRoute
+  '/recovery-policies': typeof RecoveryPoliciesRoute
   '/register': typeof RegisterRoute
+  '/team-approvals': typeof TeamApprovalsRoute
   '/transactions': typeof TransactionsRoute
 }
 export interface FileRoutesByTo {
@@ -90,9 +111,12 @@ export interface FileRoutesByTo {
   '/audit-logs': typeof AuditLogsRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/merchant-settings': typeof MerchantSettingsRoute
   '/opportunities': typeof OpportunitiesRoute
   '/recovery-lab': typeof RecoveryLabRoute
+  '/recovery-policies': typeof RecoveryPoliciesRoute
   '/register': typeof RegisterRoute
+  '/team-approvals': typeof TeamApprovalsRoute
   '/transactions': typeof TransactionsRoute
 }
 export interface FileRoutesById {
@@ -103,9 +127,12 @@ export interface FileRoutesById {
   '/audit-logs': typeof AuditLogsRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/merchant-settings': typeof MerchantSettingsRoute
   '/opportunities': typeof OpportunitiesRoute
   '/recovery-lab': typeof RecoveryLabRoute
+  '/recovery-policies': typeof RecoveryPoliciesRoute
   '/register': typeof RegisterRoute
+  '/team-approvals': typeof TeamApprovalsRoute
   '/transactions': typeof TransactionsRoute
 }
 export interface FileRouteTypes {
@@ -117,9 +144,12 @@ export interface FileRouteTypes {
     | '/audit-logs'
     | '/dashboard'
     | '/login'
+    | '/merchant-settings'
     | '/opportunities'
     | '/recovery-lab'
+    | '/recovery-policies'
     | '/register'
+    | '/team-approvals'
     | '/transactions'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -129,9 +159,12 @@ export interface FileRouteTypes {
     | '/audit-logs'
     | '/dashboard'
     | '/login'
+    | '/merchant-settings'
     | '/opportunities'
     | '/recovery-lab'
+    | '/recovery-policies'
     | '/register'
+    | '/team-approvals'
     | '/transactions'
   id:
     | '__root__'
@@ -141,9 +174,12 @@ export interface FileRouteTypes {
     | '/audit-logs'
     | '/dashboard'
     | '/login'
+    | '/merchant-settings'
     | '/opportunities'
     | '/recovery-lab'
+    | '/recovery-policies'
     | '/register'
+    | '/team-approvals'
     | '/transactions'
   fileRoutesById: FileRoutesById
 }
@@ -154,9 +190,12 @@ export interface RootRouteChildren {
   AuditLogsRoute: typeof AuditLogsRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  MerchantSettingsRoute: typeof MerchantSettingsRoute
   OpportunitiesRoute: typeof OpportunitiesRoute
   RecoveryLabRoute: typeof RecoveryLabRoute
+  RecoveryPoliciesRoute: typeof RecoveryPoliciesRoute
   RegisterRoute: typeof RegisterRoute
+  TeamApprovalsRoute: typeof TeamApprovalsRoute
   TransactionsRoute: typeof TransactionsRoute
 }
 
@@ -204,6 +243,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/merchant-settings': {
+      id: '/merchant-settings'
+      path: '/merchant-settings'
+      fullPath: '/merchant-settings'
+      preLoaderRoute: typeof MerchantSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/opportunities': {
       id: '/opportunities'
       path: '/opportunities'
@@ -218,11 +264,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RecoveryLabRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/recovery-policies': {
+      id: '/recovery-policies'
+      path: '/recovery-policies'
+      fullPath: '/recovery-policies'
+      preLoaderRoute: typeof RecoveryPoliciesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/team-approvals': {
+      id: '/team-approvals'
+      path: '/team-approvals'
+      fullPath: '/team-approvals'
+      preLoaderRoute: typeof TeamApprovalsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/transactions': {
@@ -242,9 +302,12 @@ const rootRouteChildren: RootRouteChildren = {
   AuditLogsRoute: AuditLogsRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  MerchantSettingsRoute: MerchantSettingsRoute,
   OpportunitiesRoute: OpportunitiesRoute,
   RecoveryLabRoute: RecoveryLabRoute,
+  RecoveryPoliciesRoute: RecoveryPoliciesRoute,
   RegisterRoute: RegisterRoute,
+  TeamApprovalsRoute: TeamApprovalsRoute,
   TransactionsRoute: TransactionsRoute,
 }
 export const routeTree = rootRouteImport

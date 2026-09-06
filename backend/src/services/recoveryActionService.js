@@ -50,6 +50,7 @@ export async function getRecoveryActions(userId) {
 }
 
 // Update recovery action status
+
 export async function updateRecoveryActionStatus({ userId, actionId, status }) {
   if (!userId) {
     throw new Error("Valid userId is required");
@@ -74,33 +75,24 @@ export async function updateRecoveryActionStatus({ userId, actionId, status }) {
     throw new Error("You are not allowed to update this recovery action");
   }
 
-  if (normalizedStatus === "completed") {
-    const match = String(existingAction.target ?? "").match(
-      /^Transaction\s+(\d+)/,
-    );
+  // Prevent duplicate completion processing
+  const wasAlreadyCompleted =
+    String(existingAction.status).toLowerCase() === "completed";
 
-    if (match) {
-      const transactionId = Number(match[1]);
-
-      await db.orm.public.Transaction.where({
-        id: transactionId,
-      }).update({
-        status: "success",
-      });
-    }
-  }
-  // Track when the action was actually completed
+  // Update recovery action status
   const updatedAction = await db.orm.public.RecoveryAction.where({
     id: Number(actionId),
   }).update({
     status: normalizedStatus,
   });
 
-  if (normalizedStatus === "completed") {
-    const transactionMatch = String(existingAction.target || "").match(
+  // When recovery is completed
+  if (normalizedStatus === "completed" && !wasAlreadyCompleted) {
+    const transactionMatch = String(existingAction.target ?? "").match(
       /Transaction\s+(\d+)/i,
     );
 
+    // Mark linked transaction as successful
     if (transactionMatch) {
       const transactionId = Number(transactionMatch[1]);
 
@@ -110,7 +102,45 @@ export async function updateRecoveryActionStatus({ userId, actionId, status }) {
         status: "successful",
       });
     }
+
+    // Get all completed recovery actions for this user
+    const allActions = await db.orm.public.RecoveryAction.where({
+      userId: Number(userId),
+    }).all();
+
+    const completedActions = allActions.filter(
+      (action) =>
+        ["completed", "executed", "recovered"].includes(
+          String(action.status).toLowerCase(),
+        ),
+    );
+
+    // Calculate total recovered revenue from completed actions
+    const recoveredRevenue = completedActions.reduce((sum, action) => {
+      const match = String(action.target ?? "").match(
+        /Expected recovery ₹([\d,]+)/i,
+      );
+
+      if (!match) {
+        return sum;
+      }
+
+      return sum + Number(match[1].replace(/,/g, ""));
+    }, 0);
+
+    // Create a real notification in RevenueAlert
+    await db.orm.public.RevenueAlert.create({
+      userId: Number(userId),
+      title: "Revenue recovery completed",
+      message: `₹${recoveredRevenue.toLocaleString(
+        "en-IN",
+      )} recovered across ${completedActions.length} completed recovery actions.`,
+      severity: "medium",
+      type: "recovery_completed",
+      isRead: false,
+    });
   }
+
   return updatedAction;
 }
 

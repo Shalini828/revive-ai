@@ -63,7 +63,10 @@ function DashboardPage() {
     setRefreshing(true);
 
     try {
-      await Promise.all([refetchDashboard(), refetchOpportunities()]);
+      await Promise.all([
+        refetchDashboard(),
+        refetchOpportunities(),
+      ]);
     } finally {
       setRefreshing(false);
     }
@@ -81,14 +84,18 @@ function DashboardPage() {
       opportunities: opportunities.slice(0, 10),
     };
 
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-      type: "application/json",
-    });
+    const blob = new Blob(
+      [JSON.stringify(exportData, null, 2)],
+      {
+        type: "application/json",
+      },
+    );
 
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
 
     link.href = url;
+
     link.download = `revive-ai-dashboard-${new Date()
       .toISOString()
       .slice(0, 10)}.json`;
@@ -158,7 +165,9 @@ function DashboardPage() {
               className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
             >
               <RefreshCw
-                className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+                className={`h-4 w-4 ${
+                  refreshing ? "animate-spin" : ""
+                }`}
               />
               Refresh
             </button>
@@ -210,11 +219,12 @@ function DashboardPage() {
 
       {/* SECOND ROW */}
       <section className="mt-6 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+
         {/* TOP OPPORTUNITIES */}
         <Panel>
           <PanelHeader
             title="Top Recovery Opportunities"
-            subtitle="Where the largest recoverable revenue is concentrated."
+            subtitle="Where the largest recovery opportunities are concentrated."
             actions={
               <Link
                 to="/opportunities"
@@ -251,43 +261,65 @@ function DashboardPage() {
               </div>
             ) : (
               <div className="divide-y divide-border">
-                {topOpportunities.map((opportunity: any) => (
-                  <div
-                    key={opportunity.id}
-                    className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-muted/40"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {opportunity.customerName ??
-                          opportunity.customer ??
-                          opportunity.title ??
-                          "Recovery opportunity"}
-                      </p>
+                {topOpportunities.map((opportunity: any) => {
+                  const status = String(
+                    opportunity.status ?? "",
+                  ).toLowerCase();
 
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {opportunity.issue ??
-                          opportunity.type ??
-                          opportunity.category ??
-                          "Revenue leakage"}
-                      </p>
+                  const isRecovered =
+                    status === "approved" ||
+                    status === "recovered" ||
+                    status === "completed" ||
+                    status === "successful";
+
+                  const displayAmount =
+                    opportunity.expectedRecovery ??
+                    opportunity.recoverable ??
+                    opportunity.recoverableRevenue ??
+                    opportunity.amount ??
+                    0;
+
+                  return (
+                    <div
+                      key={opportunity.id}
+                      className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-muted/40"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {opportunity.customerName ??
+                            opportunity.customer ??
+                            opportunity.title ??
+                            "Recovery opportunity"}
+                        </p>
+
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {opportunity.issue ??
+                            opportunity.type ??
+                            opportunity.category ??
+                            "Revenue leakage"}
+                        </p>
+                      </div>
+
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-semibold text-foreground">
+                          {formatCurrency(displayAmount)}
+                        </p>
+
+                        <p
+                          className={`mt-1 text-xs ${
+                            isRecovered
+                              ? "text-emerald-600"
+                              : "text-amber-600"
+                          }`}
+                        >
+                          {isRecovered
+                            ? "Recovered"
+                            : "Recoverable"}
+                        </p>
+                      </div>
                     </div>
-
-                    <div className="shrink-0 text-right">
-                      <p className="text-sm font-semibold text-foreground">
-                        {formatCurrency(
-                          opportunity.recoverable ??
-                            opportunity.recoverableRevenue ??
-                            opportunity.amount ??
-                            0,
-                        )}
-                      </p>
-
-                      <p className="mt-1 text-xs text-emerald-600">
-                        Recoverable
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </PanelBody>
@@ -325,14 +357,20 @@ function DashboardPage() {
 
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-lg bg-white p-3">
-                  <p className="text-xs text-slate-500">Opportunities</p>
+                  <p className="text-xs text-slate-500">
+                    Opportunities
+                  </p>
+
                   <p className="mt-1 text-lg font-semibold text-slate-900">
                     {opportunities.length}
                   </p>
                 </div>
 
                 <div className="rounded-lg bg-white p-3">
-                  <p className="text-xs text-slate-500">AI actions</p>
+                  <p className="text-xs text-slate-500">
+                    AI actions
+                  </p>
+
                   <p className="mt-1 text-lg font-semibold text-slate-900">
                     {data.recommendedActions?.length ?? 0}
                   </p>
@@ -370,78 +408,101 @@ function DashboardPage() {
 
           <PanelBody>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {topCategories.map((category: any) => {
-                const recoverable = Number(
-                  category.recoverable ?? category.recoverableRevenue ?? 0,
-                );
+              {topCategories.length === 0 ? (
+                <div className="col-span-full rounded-xl border border-dashed border-border p-8 text-center">
+                  <p className="text-sm font-medium text-foreground">
+                    No recovery sources detected
+                  </p>
 
-                const atRisk = Number(
-                  category.atRisk ?? category.atRiskRevenue ?? 0,
-                );
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Recovery source data will appear when new revenue leakage
+                    is detected.
+                  </p>
+                </div>
+              ) : (
+                topCategories.map((category: any) => {
+                  const recoverable = Number(
+                    category.recoverable ??
+                      category.recoverableRevenue ??
+                      0,
+                  );
 
-                const recoveryRate = Number(category.recoveryRate ?? 0);
+                  const atRisk = Number(
+                    category.atRisk ??
+                      category.atRiskRevenue ??
+                      0,
+                  );
 
-                return (
-                  <div
-                    key={category.id ?? category.name}
-                    className="rounded-xl border border-border bg-surface p-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-foreground">
-                        {category.name ?? category.label ?? "Recovery source"}
-                      </p>
+                  const recoveryRate = Number(
+                    category.recoveryRate ?? 0,
+                  );
 
-                      <TrendingUp className="h-4 w-4 text-emerald-600" />
+                  return (
+                    <div
+                      key={category.id ?? category.name}
+                      className="rounded-xl border border-border bg-surface p-4"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-foreground">
+                          {category.name ??
+                            category.label ??
+                            "Recovery source"}
+                        </p>
+
+                        <TrendingUp className="h-4 w-4 text-emerald-600" />
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-[11px] text-muted-foreground">
+                            At risk
+                          </p>
+
+                          <p className="mt-1 text-sm font-semibold">
+                            {formatCurrency(atRisk)}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-[11px] text-muted-foreground">
+                            Recoverable
+                          </p>
+
+                          <p className="mt-1 text-sm font-semibold text-emerald-600">
+                            {formatCurrency(recoverable)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <div className="mb-1.5 flex justify-between text-[11px]">
+                          <span className="text-muted-foreground">
+                            Recovery rate
+                          </span>
+
+                          <span className="font-medium">
+                            {Number.isFinite(recoveryRate)
+                              ? `${recoveryRate}%`
+                              : "—"}
+                          </span>
+                        </div>
+
+                        <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className="h-full rounded-full bg-emerald-500 transition-all"
+                            style={{
+                              width: `${Math.min(
+                                Math.max(recoveryRate, 0),
+                                100,
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
                     </div>
-
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                      <div>
-                        <p className="text-[11px] text-muted-foreground">
-                          At risk
-                        </p>
-                        <p className="mt-1 text-sm font-semibold">
-                          {formatCurrency(atRisk)}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-[11px] text-muted-foreground">
-                          Recoverable
-                        </p>
-                        <p className="mt-1 text-sm font-semibold text-emerald-600">
-                          {formatCurrency(recoverable)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      <div className="mb-1.5 flex justify-between text-[11px]">
-                        <span className="text-muted-foreground">
-                          Recovery rate
-                        </span>
-
-                        <span className="font-medium">
-                          {Number.isFinite(recoveryRate)
-                            ? `${recoveryRate}%`
-                            : "—"}
-                        </span>
-                      </div>
-
-                      <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          className="h-full rounded-full bg-emerald-500 transition-all"
-                          style={{
-                            width: `${Math.min(
-                              Math.max(recoveryRate, 0),
-                              100,
-                            )}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </PanelBody>
         </Panel>
@@ -465,8 +526,17 @@ function DashboardPage() {
 
         <PanelBody className="p-0">
           {topActions.length === 0 ? (
-            <div className="p-8 text-center text-sm text-muted-foreground">
-              No AI recovery actions available yet.
+            <div className="p-8 text-center">
+              <CheckCircle2 className="mx-auto h-7 w-7 text-emerald-500" />
+
+              <p className="mt-3 text-sm font-medium text-foreground">
+                No immediate AI actions required
+              </p>
+
+              <p className="mt-1 text-xs text-muted-foreground">
+                REVIVE AI has no new recovery intervention waiting for
+                execution.
+              </p>
             </div>
           ) : (
             <div className="divide-y divide-border">
